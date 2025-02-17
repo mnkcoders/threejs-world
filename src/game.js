@@ -17,26 +17,38 @@ class Game{
      */
     initialize(){
 
-        this._scene = new THREE.Scene();
-        this._gameTime = new THREE.Clock();
-        this._gameState = Game.State.Init;
+        this._state = Game.State.Init;
+        this._loop = new GameLoop();
+        this._camera = Camera.instance();
+        this._world = new GameWorld();
 
         return this;
     }
     /**
      * @returns {Game.State}
      */
-    gameState(){
-        return this._gameState;
+    state(){
+        return this._state;
+    }
+    /**
+     * @param {Game.State} state 
+     * @returns {Game.State}
+     */
+    setState( state ){
+        if( this._state !== state ){
+            this._state = state;
+        }
+        return this.state();
     }
     /**
      * @returns {Game}
      */
     load(){
-        if( this._gameState === Game.State.Init){
-            this._gameState = Game.State.Loading;
+        if( this.state() === Game.State.Init){
+            this.setState(Game.State.Loading);
 
             //set callback to prepare and render the world (running)
+            //this.setState(Game.State.Ready);
         }
 
         return this;
@@ -46,12 +58,35 @@ class Game{
      */
     unload(){
 
-        if( this._gameState === Game.State.Running){
-            this._gameState = Game.State.Ending;
+        if( this.state() === Game.State.Running){
+            this.setState(Game.State.Unloading);
 
             //set callback to complete and quit the game
+            //this.setState(Game.State.Finished);
         }
 
+        return this;
+    }
+    /**
+     * @returns {Game}
+     */
+    run(){
+        if( this.state() === Game.State.Ready ){
+            this._loop.start(( elapsed = 0 , delta = 0 ) => {
+                this.update( elapsed , delta );
+                this.draw();
+            });    
+        }
+        return this;
+    }
+    /**
+     * @returns {Game}
+     */
+    finalize(){
+        if( this.state() === Game.State.Running){
+            this._loop.stop();
+            this.unload();    
+        }
         return this;
     }
     /**
@@ -61,15 +96,16 @@ class Game{
      */
     update( gameTime = 0 , delta =  0){
 
-        //update game content collections
-        // entities...
-        // game states ...
-
         //update inputs
         //InputManager ...
 
-        //update camera view and render
-        Camera.instance().update(gameTime,delta).renderer(this.scene());
+        //update game content collections
+        // entities...
+        // game states ...
+        this._world.update(gameTime,delta);
+
+        //update camera properties
+        this._camera.update(gameTime,delta);
         
         return this;
     }
@@ -77,23 +113,14 @@ class Game{
      * @returns {Game}
      */
     draw(){
-
+        
+        
+        Camera.instance().renderer(this.scene());
+        
         return this;
     }
-    /**
-     * @returns {THREE.Scene}
-     */
-    scene(){
-        return this._scene;
-    }
-    /**
-     * @returns {THREE.Clock}
-     */
-    time(){
-        return this._gameTime;
-    }
 
-
+    
     /**
      * @returns {Game}
      */
@@ -107,12 +134,72 @@ class Game{
 Game.State = {
     'Init':'init',
     'Loading': 'loading',
-    'Main': 'main',
-    'Settings': 'settings',
+    'Ready': 'ready',
     'Running': 'running',
-    'Ending': 'ending',
-    'Done': 'done',
+    'Unloading': 'unloading',
+    'Finished': 'finished',
 };
+/**
+ * @class {GameLoop}
+ */
+class GameLoop{
+
+    constructor(){
+        this._gameTime = new THREE.Clock(false);
+    }
+    /**
+     * @returns {THREE.Clock}
+     */
+    time(){
+        return this._gameTime;
+    }
+    /**
+     * @returns {Number}
+     */
+    elapsed(){
+        return this.time().elapsedTime();
+    }
+    /**
+     * @returns {Number}
+     */
+    delta(){
+        return this.time().getDelta();
+    }
+    /**
+     * @param {Function} callback 
+     */
+    update( callback ){
+        if( this.running() ){
+            callback( this.time().elapsedTime() , this.time().getDelta() );
+            window.requestAnimationFrame( () => this.update( callback ) );    
+        }
+    }
+    /**
+     * @returns {GameLoop}
+     */
+    start( callback ){
+        if( !this.running() && typeof callback === 'function' ){
+            this.time().start();
+            this.update( callback );    
+        }
+        return this;
+    }
+    /**
+     * @returns {GameLoop}
+     */
+    stop(){
+        if( this.running() ){
+            this.time().stop();
+        }
+        return this;
+    }
+    /**
+     * @returns {Boolean}
+     */
+    running(){
+        return this.time().running();
+    }
+}
 
 
 /**
@@ -332,16 +419,9 @@ Camera.ViewType = {
     'Debug':5,
 };
 
-class ContentManager{
-
-}
-
-class InputManager{
-
-}
 
 
 
-export {Game,ContentManager,InputManager};
+export {Game};
 
 
