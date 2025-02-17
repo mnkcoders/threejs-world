@@ -33,12 +33,24 @@ class Game{
      * @returns {Game}
      */
     load(){
+        if( this._gameState === Game.State.Init){
+            this._gameState = Game.State.Loading;
+
+            //set callback to prepare and render the world (running)
+        }
+
         return this;
     }
     /**
      * @returns {Game}
      */
     unload(){
+
+        if( this._gameState === Game.State.Running){
+            this._gameState = Game.State.Ending;
+
+            //set callback to complete and quit the game
+        }
 
         return this;
     }
@@ -98,8 +110,8 @@ Game.State = {
     'Main': 'main',
     'Settings': 'settings',
     'Running': 'running',
-    'Finalizing': 'finalizing',
-    'Finalize': 'finalize',
+    'Ending': 'ending',
+    'Done': 'done',
 };
 
 
