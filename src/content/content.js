@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { DRACOLoader, GLTFLoader } from 'three/examples/jsm/Addons.js';
+
 /**
  * @class {ContentManager}
  */
@@ -22,6 +24,8 @@ class ContentManager{
         this._models = {};
         this._textures = {};
 
+        this._contentLoader = new ContentLoader();
+
         return this;
     }
     add( asset ){
@@ -34,7 +38,7 @@ class ContentManager{
      * @returns {ContentManager}
      */
     loadContents(){
-        const drive = new DriveManager();
+        const drive = new ContentLoader();
         //load all assets here by type and folder (use a folder content loader)
         drive.read('models')
             .map( name => new GameAsset(name,GameAsset.Types.Model))
@@ -94,10 +98,46 @@ class ContentManager{
 /**
  * @class {DriveManager}
  */
-class DriveManager{
+class ContentLoader{
     constructor(){
-
+        this.initialize().createLoaders();
     }
+    /**
+     * @returns {ContentLoader}
+     */
+    initialize(){
+        this._loaded = 0;
+        this._collection = {};
+
+        return this;
+    }
+    /**
+     * @returns {ContentLoader}
+     */
+    createLoaders(){
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('/draco/');
+        this._gltfLoader = new GLTFLoader();
+        this._gltfLoader.setDRACOLoader(dracoLoader);
+        this._textureLoader = new THREE.TextureLoader();
+        return this;
+    }
+    /**
+     * @returns {GLTFLoader}
+     */
+    modelLoader(){
+        return this._gltfLoader;
+    }
+    /**
+     * @returns {THREE.TextureLoader}
+     */
+    textureLoader(){
+        return this._textureLoader;
+    }
+    /**
+     * @param {String} content 
+     * @returns {String}
+     */
     path( content = '' ){
         return content.length ? `static/contents/${content}` : '';
     }
@@ -107,127 +147,33 @@ class DriveManager{
      */
     read( content = '' , filterTypes = '' ){
         const path = this.path(content);
+        //get all filenames here
+        this._collection[content] = [];
 
-        return [];
-    }
-}
-/**
- * @class {Asset}
- */
-class GameAsset{
-    constructor( name = 'content', type = GameAsset.Types.Invalid ){
-        this._type = type;
-        this._name = name;
-    }
-    /**
-     * @returns {GameAsset}
-     */
-    load(){
-        if(this.valid()){
-            switch(this.type()){
-                default:
-                    return null;
-            }    
-        }
-        return null;
-    }
-    path(){
-        switch(this.type()){
-            case GameAsset.Types.Model:
-                return `static/models/${this.name()}`;
-            case GameAsset.Types.Sound:
-                return `static/sounds/${this.name()}`;
-            case GameAsset.Types.Texture:
-                return `static/textures/${this.name()}`;
-            case GameAsset.Types.Template:
-                return `static/templates/${this.name()}`;
-        }
-        return '';
-    }
-    type(){
-        return this._type;
-    }
-    name(){
-        return this._name;
-    }
-    /**
-     * @returns {Boolean}
-     */
-    valid(){
-        return this.type() !== GameAsset.Types.Invalid;
-    }
-}
-/**
- * @type {GameAsset.Types}
- */
-GameAsset.Types = {
-    'Invalid':'invalid',
-    'Texture':'texture',
-    'Sound':'sound',
-    'Model':'model',
-    'Template':'template',
-};
+        //this._contents += this._assets[content].length;
 
-/**
- * @class {Template}
- */
-class Template{
-    constructor(){
-        this._name = '';
-        this._users = 0;
+        return this._collection;
     }
     /**
-     * @returns {String}
+     * @returns {Number}
      */
-    toString(){
-        return this.name();
+    loadedContents(){
+        return this._loaded;
     }
     /**
-     * @returns {Boolean}
+     * @returns {Number}
      */
-    used(){
-        return this._users > 0;
-    }
-    create(){
-        this._users++;
-        return null;
+    totalContents(){
+        return Object.values( this._collection )
+            .map( list => list.reduce( (a,b) => a+b , 0) )
+            .reduce( (a,b) => a+b , 0);
     }
     /**
-     * @returns {Template}
+     * @returns {Number}
      */
-    drop(){
-        if( this._users > 0 ){
-            this._users--;
-        }
-        return this;
-    }
-    /**
-     * @returns {String}
-     */
-    name(){
-        return this._name;
+    loadProgress(){
+        return this.loadedContents() / this.totalContents();
     }
 }
 
-
-
-class SoundTemplate extends Template{
-    constructor(){
-
-    }
-}
-
-class ModelTemplate extends Template{
-    constructor(){
-        
-    }
-}
-
-class TextureTemplate extends Template{
-    constructor(){
-        
-    }
-}
-
-
-
+export {ContentManager,ContentLoader};

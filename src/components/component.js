@@ -1,4 +1,5 @@
 
+
 /**
  * @class {GameComponent}
  */
@@ -12,6 +13,33 @@ class GameComponent{
      */
     tags(){
         return this._tags;
+    }
+    /**
+     * @param {String} tag 
+     * @returns {Boolean}
+     */
+    is( tag = '' ){
+        return tag && this.tags().includes(tag);
+    }
+    /**
+     * @param {String} tag 
+     * @returns {GameComponent}
+     */
+    tag( tag = ''){
+        if( !this.is(tag)){
+            this._tags.push(tag);
+        }
+        return this;
+    }
+    /**
+     * @param {String} tag 
+     * @returns {GameComponent}
+     */
+    untag( tag = ''){
+        if( this.is(tag)){
+            this._tags = this._tags.filter( t => t !== tag );
+        }
+        return this;
     }
     /**
      * @param {Boolean} list 
@@ -52,13 +80,6 @@ class GameComponent{
         return this.add( name , - value );
     }
     /**
-     * @param {String} tag 
-     * @returns {Boolean}
-     */
-    is( tag = '' ){
-        return tag && this.tags().includes(tag);
-    }
-    /**
      * @param {String} name 
      * @returns {Boolean}
      */
@@ -66,31 +87,7 @@ class GameComponent{
         return name && this.properties(true).includes(name);
     }
 }
-/**
- * @class {GameVariables}
- */
-class GameVariables extends GameComponent{
-    constructor(){
-        if( this.instance ){
-            return this.instance;
-        }
-        this.instance = this.initialize();
-    }
-    /**
-     * @returns {GameVariables}
-     */
-    initialize(){
-        super();
-        return this;
-    }
-    /**
-     * @returns {GameVariables}
-     */
-    instance(){
-        return this.instance || new GameVariables();
-    }
-}
 
 
 
-export {GameComponent,GameVariables};
+export {GameComponent};
