@@ -29,7 +29,7 @@ class Game{
 
         this._loop = new GameLoop();
         this._display = Display.instance();
-        this._content = ContentManager.instance();
+        //this._content = ContentManager.instance();
         //this._world = new GameWorld();
         //this._world = new GameWorld();
         this._world = new GameWorld();
@@ -40,6 +40,26 @@ class Game{
 
         return this;
     }
+    /**
+     * @returns {GameLoop}
+     */
+    gameLoop(){
+        return this._loop;
+    }
+    /**
+     * @returns {Display}
+     */
+    display(){
+        return this._display;
+    }
+    /**
+     * @returns {ContentManager}
+     */
+    content(){
+        return ContentManager.instance();
+    }
+
+
     /**
      * @returns {String|Object}
      */
@@ -76,11 +96,20 @@ class Game{
     load(){
         if( this.isState( GameState.States.Init )){
             this.setState(GameState.States.Loading);
-            this._content.loadContents();
 
-            this.debug(this._content.contents()
-                .map( type => this._content.contents(type)
+            const contentManager =this.content();
+
+            contentManager.loadContents();
+
+
+
+            this.debug(contentManager.contents()
+                .map( type => contentManager.contents(type)
                     .map(asset => asset.name())));
+
+            console.log(contentManager.contents());
+            console.log(contentManager.contents('texture')[0].load());
+            console.log(contentManager.contents('audio')[0].load());
 
             //set callback to prepare and render the world (running)
             this.setState(GameState.States.Ready);
