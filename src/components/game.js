@@ -3,6 +3,7 @@ import { Display} from './display';
 import { GameComponent } from "./component";
 import { GameWorld } from "../world/world";
 import { InputManager } from "./input";
+import { ContentManager } from "../content/content";
 
 /**
  * @class {Game}
@@ -28,6 +29,7 @@ class Game{
 
         this._loop = new GameLoop();
         this._display = Display.instance();
+        this._content = ContentManager.instance();
         //this._world = new GameWorld();
         //this._world = new GameWorld();
         this._world = new GameWorld();
@@ -74,6 +76,11 @@ class Game{
     load(){
         if( this.isState( GameState.States.Init )){
             this.setState(GameState.States.Loading);
+            this._content.loadContents();
+
+            this.debug(this._content.contents()
+                .map( type => this._content.contents(type)
+                    .map(asset => asset.name())));
 
             //set callback to prepare and render the world (running)
             this.setState(GameState.States.Ready);
@@ -89,6 +96,7 @@ class Game{
         if( this.isState( GameState.States.Running ) ){
 
             this.setState(GameState.States.Unloading);
+            this._content.unloadContents();
 
             //set callback to complete and quit the game
             //this.setState(GameState.State.Finished);

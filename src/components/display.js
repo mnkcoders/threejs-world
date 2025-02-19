@@ -196,7 +196,7 @@ class Display{
     bind(){
         //resize
         window.addEventListener('resize',() => {
-            Display.__instance().refresh();
+            Display.instance().refresh();
         });  
         return this;
     }
