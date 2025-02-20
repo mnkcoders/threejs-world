@@ -103,13 +103,13 @@ class Game{
 
 
 
-            this.debug(contentManager.contents()
-                .map( type => contentManager.contents(type)
+            this.debug(contentManager.list()
+                .map( type => contentManager.list(type)
                     .map(asset => asset.name())));
 
             console.log(contentManager.contents());
-            console.log(contentManager.contents('texture')[0].load());
-            console.log(contentManager.contents('audio')[0].load());
+            console.log(contentManager.texture('dungeon_01.jpg'));
+            console.log(contentManager.audio('cricket_01.ogg'));
 
             //set callback to prepare and render the world (running)
             this.setState(GameState.States.Ready);

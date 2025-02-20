@@ -30,10 +30,12 @@ class ContentManager {
     }
     /**
      * @param {String} type 
+     * @param {String} content
      * @returns {Boolean}
      */
-    has(type = '') {
-        return type.length && this._contents.hasOwnProperty(type);
+    has(type = '', content = '') {
+        const hasType = type.length && this._contents.hasOwnProperty(type);
+        return hasType && content.length ? this.contents()[type].hasOwnProperty(content) : hasType;
     }
     /**
      * @param {Content} content 
@@ -42,21 +44,34 @@ class ContentManager {
     add(content) {
         if (content instanceof Content && content.valid()) {
             if (!this.has(content.type())) {
-                this._contents[content.type()] = [];
+                this._contents[content.type()] = {};
             }
-            this._contents[content.type()].push(content);
+            //this._contents[content.type()].push(content);
+            this._contents[content.type()][content.name()] = content;
         }
         return this;
+    }
+    /**
+     * @param {String} type
+     * @returns {Object}
+     */
+    contents( type = '') {
+        return type.length ? this.has(type) && this._contents[type] || null : this._contents;
+    }
+    /**
+     * @param {String} name 
+     * @param {String} type 
+     * @returns {Content}
+     */
+    get(name = '',type = ''){
+        return this.has(type,name) ? this.contents(type)[name] : null;
     }
     /**
      * @param {String} type 
      * @returns {String[]|Content[]}
      */
-    contents(type = '') {
-        if (type.length) {
-            return this.has(type) ? this._contents[type] : [];
-        }
-        return Object.keys(this._contents);
+    list( type = ''){
+        return type.length ? this.has(type) && Object.values(this.contents(type)) || [] : Object.keys(this.contents());
     }
     /**
      * @returns {ContentManager}
@@ -90,6 +105,36 @@ class ContentManager {
         const progress = total > 0 ? Math.trunc(count / total * 100) : 0;
         console.log(`Progress: ${count} of ${total} (${progress} %)`);
         return this;
+    }
+    /**
+     * @param {String} name 
+     * @param {String} type 
+     * @returns {*}
+     */
+    load( name = '', type = ''){
+        const content = this.get( name , type );
+        return content && content.instance() || null;
+    }
+    /**
+     * @param {String} name 
+     * @returns {THREE.Texture}
+     */
+    texture( name = ''){
+        return this.load( name, ContentManager.Types.Textures,name);
+    }
+    /**
+     * @param {String} name 
+     * @returns {THREE.Mesh}
+     */
+    mesh( name = ''){
+        return this.load( name, ContentManager.Types.Models,name);
+    }
+    /**
+     * @param {String} name 
+     * @returns {AudioBuffer}
+     */
+    audio( name = ''){
+        return this.load( name, ContentManager.Types.Audio,name);
     }
 }
 /**
@@ -309,6 +354,7 @@ class Content {
     constructor(name = 'content', type = ContentManager.Types.Invalid) {
         this._type = type;
         this._name = name;
+        this._users = 0;
 
         this._buffer = null;
     }
@@ -319,27 +365,53 @@ class Content {
         return `(${this.type()})${this.name()}`;
     }
     /**
-     * @returns {Content|THREE.Texture}
+     * 
+     * @returns {Content|THREE.Texture|THREE.Mesh|AudioBuffer|*}
+     */
+    instance(){
+        return ++this._users && this._buffer || this.load();
+    }
+    /**
+     * @returns {Content|THREE.Texture|THREE.Mesh|AudioBuffer|*}
      */
     load() {
-        if (this.valid()) {
+        if (this.valid() && this._buffer === null ) {
             switch (this.type()) {
                 case ContentManager.Types.Models:
-                    return ContentProvider.instance().model(this);
+                    this._buffer = ContentProvider.instance().model(this);
                 case ContentManager.Types.Textures:
-                    return ContentProvider.instance().texture(this);
+                    this._buffer = ContentProvider.instance().texture(this);
                 case ContentManager.Types.Audio:
-                    return ContentProvider.instance().audio(this);
+                    this._buffer = ContentProvider.instance().audio(this);
             }
         }
-        return null;
+        return this._buffer;
     }
+    /**
+     * @returns {Content}
+     */
+    unload(){
+        this._users = this._users > 0 ? this._users - 1 : 0;
+        if( this._users === 0){
+            this._buffer = null;
+        }
+        return this;
+    }
+    /**
+     * @param {ProgressEvent} progress 
+     */
     onProgress(progress) {
         console.log(progress);
     }
+    /**
+     * @param {String} error 
+     */
     onError(error) {
         console.log(error, this.name(true));
     }
+    /**
+     * @param {*} data 
+     */
     onLoad(data) {
         console.log(data);
     }
