@@ -213,6 +213,8 @@ class GameState extends GameComponent{
     constructor(name = GameState.States.Init ){
         super();
         this._state = name || '';
+        this._parent = null;
+        this._children = {};
         //this.tag(name);
         this._inputs = InputManager.instance();
     }
@@ -228,6 +230,42 @@ class GameState extends GameComponent{
     name(){
         return this._state;
     }
+    /**
+     * @returns {GameState}
+     */
+    parent(){
+        return this._parent;
+    }
+    /**
+     * @returns {String}
+     */
+    path(){
+        return this.parent() && this.parent().path() + '.' + this.name() || this.name();
+    }
+    /**
+     * @param {Boolean} list 
+     * @returns {GameState}
+     */
+    children( list = false ){
+        return list ? Object.values(this._children) : this._children;
+    }
+    addState( state = null ){
+        if( state instanceof GameState && !this.children().hasOwnProperty(state.name())){
+            this.children()[state.name()] = state;
+            state.setParent(this);
+        }
+        return this;
+    }
+    /**
+     * @param {GameState} parent 
+     * @returns {GameState}
+     */
+    setParent( parent = null ){
+        if( parent instanceof GameState ){
+            this._parent = parent;
+        }
+        return this;
+    };
     /**
      * @returns {GameState}
      */
